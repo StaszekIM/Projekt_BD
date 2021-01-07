@@ -28,7 +28,7 @@ elseif ($method == 'POST') {
     $phone = intval($phone);
     // Getting connection, preparing and executing SQL command
     $dbconn = Connection::getPDO();    
-    $sql = 'insert into users.users (name, surname, email, password, phone) values (:name, :surname, :email, :password, :phone)';
+    $sql = 'insert into shop.users (name, surname, email, password, phone) values (:name, :surname, :email, :password, :phone)';
     $stmt = $dbconn -> prepare($sql);
     $success = $stmt -> execute(array(':name' => $_POST['name'], ':surname' => $_POST['surname'],
         ':email' => $_POST['email'], ':password' => password_hash($_POST['password'], PASSWORD_DEFAULT), ':phone' => $phone,));

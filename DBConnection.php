@@ -2,8 +2,8 @@
 
 class Connection {
 
-    private static $dbconn;
-    private static $PDO;
+    private static Connection $dbconn;
+    private static \PDO $PDO;
 
     /**
      * Connect to the database and return an instance of \PDO object
