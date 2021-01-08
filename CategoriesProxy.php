@@ -92,14 +92,14 @@ namespace {
         }
 
         public function list_hierarchy_up(string $name){
-            $id = static::$named_categories[$name] -> $id;
+            $id = static::$named_categories[$name] -> id;
             return static::$relations['parent_categories'][$id];
         }
 
         private function get_parent_id($arg){
 
-            if ($arg instanceof string) return static::$named_categories[$arg] -> $pid;
-            elseif ($arg instanceof int) return static::$categories[$arg] -> $pid;
+            if ($arg instanceof string) return static::$named_categories[$arg] -> pid;
+            elseif ($arg instanceof int) return static::$categories[$arg] -> pid;
 
         }
 
