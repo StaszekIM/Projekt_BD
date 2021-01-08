@@ -65,9 +65,10 @@ namespace {
                 //$done = new \Ds\Set();
                 foreach (static::$categories as $cat){
                     $id = $cat -> id;
+                    echo "ID: " . $id . " ";
                     // if ($done.contains($id)) continue;
                     $pid = self::get_parent_id($id);
-                    echo $pid;
+                    echo "PID: " . $pid . " ";
                     while ($pid != null){
                         if (!array_key_exists($id, static::$relations['parent_categories'])){
                             static::$relations['parent_categories'][$id] = array();
@@ -101,8 +102,8 @@ namespace {
 
         private function get_parent_id($arg){
 
-            if (is_subclass_of($arg, 'string')) return static::$named_categories[$arg] -> pid;
-            elseif (is_subclass_of($arg, 'int')) return static::$categories[$arg] -> pid;
+            if (is_string($arg)) return static::$named_categories[$arg] -> pid;
+            elseif (is_int($arg)) return static::$categories[$arg] -> pid;
 
         }
 
