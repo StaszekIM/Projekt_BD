@@ -11,13 +11,23 @@ namespace {
     class CategoriesProxy
     {
 
-        private static CategoriesProxy $instance;
+        private static ?CategoriesProxy $instance = null;
+        /* Structure of relations:
+         *  - subcategories and parent_categories
+         *  - each of above has \Ds\Map storing \Ds\Set as values and using IDs as keys [Map<int, Set>]
+         *    (a = static::$relations['subcategories'].get($id); - Get set of subcategories for category with $id) */
         private static array $relations;
+        // Category ID -> Category class map (id, name, pid)
         private static \Ds\Map $categories;
+        private static \Ds\Map $named_categories;
 
         private function build()
         {
 
+            static::$categories = new \Ds\Map();
+            static::$named_categories = new \Ds\Map();
+            static::$relations['subcategories'] = new \Ds\Map();
+            static::$relations['parent_categories'] = new \Ds\Map();
             $dbconn = Connection::getPDO();
             $stmt = $dbconn->prepare("select * from shop.categories");
             $success = $stmt->execute();
@@ -26,27 +36,37 @@ namespace {
 
                 $data = $stmt->fetchAll();
                 $N = $stmt->rowCount();
+                // Reserve appropriate space in data structures
                 static::$categories -> allocate($N);
-                // Initialize NxN matrix
-                for ($i = 0; $i < $N; ++$i) {
-                    static::$relations[i] = array();
-                    for ($j = 0; $j < N; ++$j) {
-                        static::$relations[i][j] = 0;
-                    }
-                }
-                // 1 in $relations[i][j] means there's an edge in categories graph from i to j
-                // that means i is subcategory of j (j is parent of i)
+                static::$relations['subcategories'] -> allocate($N);
+                static::$relations['parent_categories'] -> allocate($N);
                 foreach ($data as $row) {
 
                     $pid = $row['pid'];
                     $id = $row['id'];
-                    static::$categories -> put($id, new CategoriesProxy\Category($id, $row['name'], $pid));
+                    $name = $row['name'];
+                    // Store information about category
+                    $cat = new CategoriesProxy\Category($id, $name, $pid);
+                    static::$categories -> put($id, $cat);
+                    static::$named_categories -> put($name, $cat);
 
-                    if ($pid) {
-                        // Set relation to parent category
-                        static::$relations[$id][$pid] = 1;
+                    // It's not category from the top of the hierarchy
+                    if ($pid != null) {
+                        // static::$relations['parent_categories'].get($id).add($pid);
+                        static::$relations['subcategories'].get($pid).add($id);
+                    }// Relations for top categories are set by their subcategories (those can be skipped)
+
+                }
+
+                // At this point only direct parent is included. Building hierarchy
+                $done = new \Ds\Set();
+                foreach (static::$relations['subcategories'].keys() as $id){
+                    // if ($done.contains($id)) continue;
+                    $pid = static::get_parent_id($id);
+                    while ($pid != null){
+                        static::$relations['parent_categories'].get($id).add($pid);
+                        $pid = static::get_parent_id($pid);
                     }
-
                 }
 
             } else {
@@ -64,6 +84,18 @@ namespace {
             }
 
             return static::$instance;
+        }
+
+        public function list_hierarchy_up(string $name){
+            $id = static::$named_categories[$name].$id;
+            return static::$relations['parent_categories'][$id];
+        }
+
+        private function get_parent_id(string $arg){
+
+            if ($arg instanceof string) static::$named_categories.get($arg).$pid;
+            elseif ($arg instanceof int) static::$categories.get($arg).$pid;
+
         }
 
         protected function __construct()
