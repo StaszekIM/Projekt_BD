@@ -63,7 +63,8 @@ namespace {
 
                 // At this point only direct parent is included. Building hierarchy
                 //$done = new \Ds\Set();
-                foreach (array_keys(static::$relations['subcategories']) as $id){
+                foreach (static::$categories as $cat){
+                    $id = $cat -> id;
                     // if ($done.contains($id)) continue;
                     $pid = self::get_parent_id($id);
                     echo $pid;
@@ -84,6 +85,7 @@ namespace {
 
         public static function get()
         {
+            static::$instance = null;
             if (null === static::$instance) {
                 static::$instance = new static();
                 static::$instance->build();
@@ -99,8 +101,8 @@ namespace {
 
         private function get_parent_id($arg){
 
-            if ($arg instanceof string) return static::$named_categories[$arg] -> pid;
-            elseif ($arg instanceof int) return static::$categories[$arg] -> pid;
+            if (is_subclass_of($arg, 'string')) return static::$named_categories[$arg] -> pid;
+            elseif (is_subclass_of($arg, 'int')) return static::$categories[$arg] -> pid;
 
         }
 
