@@ -79,7 +79,6 @@ namespace {
         {
             if (null === static::$instance) {
                 static::$instance = new static();
-                static::$categories = new \Ds\Map();
                 static::$instance->build();
             }
 
