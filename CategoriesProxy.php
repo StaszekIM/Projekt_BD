@@ -63,11 +63,10 @@ namespace {
 
                 // At this point only direct parent is included. Building hierarchy
                 //$done = new \Ds\Set();
-                echo "heg";
                 foreach (array_keys(static::$relations['subcategories']) as $id){
                     // if ($done.contains($id)) continue;
-                    echo "ghewg";
                     $pid = self::get_parent_id($id);
+                    echo $pid;
                     while ($pid != null){
                         if (!array_key_exists($id, static::$relations['parent_categories'])){
                             static::$relations['parent_categories'][$id] = array();
