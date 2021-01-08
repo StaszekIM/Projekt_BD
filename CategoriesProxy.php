@@ -42,7 +42,7 @@ namespace {
 //                static::$relations['parent_categories'] -> allocate($N);
                 foreach ($data as $row) {
 
-                    $pid = $row['pid'];
+                    $pid = $row['parent_id'];
                     $id = $row['id'];
                     $name = $row['name'];
                     // Store information about category
