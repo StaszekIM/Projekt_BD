@@ -21,6 +21,9 @@ namespace {
         private static array $categories;
         private static array $named_categories;
 
+        /**
+         * Downloads and processes data from data base then saves results in cache in DB
+         */
         private function build()
         {
 
@@ -35,40 +38,32 @@ namespace {
             if ($success) {
 
                 $data = $stmt->fetchAll();
-                $N = $stmt->rowCount();
-                // Reserve appropriate space in data structures
-//                static::$categories -> allocate($N);
-//                static::$relations['subcategories'] -> allocate($N);
-//                static::$relations['parent_categories'] -> allocate($N);
                 foreach ($data as $row) {
 
                     $pid = $row['parent_id'];
                     $id = $row['id'];
                     $name = $row['name'];
-                    // Store information about category
+                    // Store information about category - for purpose of building cache, data available in DB,
+                    // can be discarded later
                     $cat = new CategoriesProxy\Category($id, $name, $pid);
                     static::$categories[$id] = $cat;
                     static::$named_categories[$name] = $cat;
 
-                    // It's not category from the top of the hierarchy
                     if ($pid != null) {
-                        // static::$relations['parent_categories'].get($id).add($pid);
                         if (!array_key_exists($pid, static::$relations['subcategories'])) {
                             static::$relations['subcategories'][$pid] = array();
                         }
                         array_push(static::$relations['subcategories'][$pid], $id);
-                    }// Relations for top categories are set by their subcategories (those can be skipped)
+                    }
 
                 }
 
-                // At this point only direct parent is included. Building hierarchy
-                //$done = new \Ds\Set();
+                // Building hierarchy, parent categories are stored as list of IDs beginning with direct parent
+                // and going up the hierarchy until top category with null as parent is reached - order is important
                 foreach (static::$categories as $cat){
                     $id = $cat -> id;
-                    echo "ID: " . $id . " ";
-                    // if ($done.contains($id)) continue;
                     $pid = self::get_parent_id($id);
-                    echo "PID: " . $pid . " ";
+                    // Go through the hierarchy
                     while ($pid != null){
                         if (!array_key_exists($id, static::$relations['parent_categories'])){
                             static::$relations['parent_categories'][$id] = array();
@@ -78,32 +73,101 @@ namespace {
                     }
                 }
 
+                self::save();
+
             } else {
                 throw new RuntimeException;
             }
 
         }
 
+        // Singleton is used to ensure proper cache state (which is checked when get() is called)
         public static function get()
         {
-            static::$instance = null;
             if (null === static::$instance) {
                 static::$instance = new static();
+            }
+            if (self::is_cache_empty()) {
                 static::$instance->build();
             }
-
             return static::$instance;
         }
 
+        /**
+         * @param string $name Name of the category
+         * @return array Ordered list of IDs of parent categories, starting with direct one and going up
+         */
         public function list_hierarchy_up(string $name){
-            $id = static::$named_categories[$name] -> id;
+            $id = self::get_id_by_name($name);
             return static::$relations['parent_categories'][$id];
         }
 
+        /**
+         * @param $arg String or int representing category of interest
+         * @return mixed ID of parent
+         */
         private function get_parent_id($arg){
 
-            if (is_string($arg)) return static::$named_categories[$arg] -> pid;
-            elseif (is_int($arg)) return static::$categories[$arg] -> pid;
+            if (is_string($arg)) {
+                // Get data from program if it's available
+                if (static::$named_categories != null) return static::$named_categories[$arg] -> pid;
+                // Otherwise query DB for data
+                else {
+                    $dbconn = Connection::getPDO();
+                    $stmt = $dbconn -> prepare("select pid from shop.categories where name = :name");
+                    $success = $stmt -> execute(['name' => $arg]);
+                    if ($success) return $stmt -> fetch()['pid'];
+                    else throw new RuntimeException();
+                }
+            }
+            elseif (is_int($arg)) {
+                if (static::$categories != null) return static::$categories[$arg] -> pid;
+                else {
+                    $dbconn = Connection::getPDO();
+                    $stmt = $dbconn -> prepare("select pid from shop.categories where id = :id");
+                    $success = $stmt -> execute(['id' => $arg]);
+                    if ($success) return $stmt -> fetch()['pid'];
+                    else throw new RuntimeException();
+                }
+            }
+            else throw new InvalidArgumentException();
+
+        }
+
+        private function get_id_by_name(string $name){
+            if (static::$named_categories != null) static::$named_categories[$name] -> id;
+            else {
+                $dbconn = Connection::getPDO();
+                $stmt = $dbconn -> prepare("select id from shop.categories where name = :name");
+                $success = $stmt -> execute(['name' => $name]);
+                if ($success) return $stmt -> fetch()['id'];
+                else throw new RuntimeException();
+            }
+        }
+
+        private static function is_cache_empty(){
+            $dbconn = Connection::getPDO();
+            $stmt = $dbconn -> prepare("select id from cache.subcategories limit 1");
+            $success = $stmt -> execute();
+            if ($success){
+                if ($stmt -> rowCount()){
+                    return false;
+                }
+                return true;
+            }
+            return true;
+        }
+
+        private function save() {
+
+            $dbconn = Connection::getPDO();
+            $stmt = $dbconn -> prepare('insert into cache.subcategories (id, "values") values (:id, :vals)');
+            foreach (array_keys(static::$relations['subcategories']) as $key){
+                $id = $key;
+                $vals = static::$relations['subcategories'][$id];
+                $stmt -> execute(['id' => $id, 'vals' => $vals]);
+            }
+
 
         }
 
