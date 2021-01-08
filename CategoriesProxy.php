@@ -128,12 +128,12 @@ namespace CategoriesProxy{
 
         public int $id;
         public string $name;
-        public int $pid;
+        public ?int $pid;
 
         public function __construct($id, $name, $pid){
-            $this -> $id = $id;
-            $this -> $name = $name;
-            $this -> $pid = $pid;
+            $this -> id = $id;
+            $this -> name = $name;
+            $this -> pid = $pid;
         }
 
     }
