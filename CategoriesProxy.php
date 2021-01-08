@@ -53,7 +53,7 @@ namespace {
                     // It's not category from the top of the hierarchy
                     if ($pid != null) {
                         // static::$relations['parent_categories'].get($id).add($pid);
-                        if (static::$relations['subcategories'][$pid] == null) {
+                        if (!array_key_exists($pid, static::$relations['subcategories'])) {
                             static::$relations['subcategories'][$pid] = array();
                         }
                         array_push(static::$relations['subcategories'][$pid], $id);
@@ -67,7 +67,7 @@ namespace {
                     // if ($done.contains($id)) continue;
                     $pid = self::get_parent_id($id);
                     while ($pid != null){
-                        if (static::$relations['parent_categories'][$id] == null){
+                        if (!array_key_exists($id, static::$relations['parent_categories'])){
                             static::$relations['parent_categories'][$id] = array();
                         }
                         array_push(static::$relations['parent_categories'][$id], $pid);
