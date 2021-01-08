@@ -2,8 +2,8 @@
 
 class Connection {
 
-    private static ?Connection $dbconn;
-    private static ?\PDO $PDO;
+    private static ?Connection $dbconn = null;
+    private static ?\PDO $PDO = null;
 
     /**
      * Connect to the database and return an instance of \PDO object
