@@ -71,6 +71,7 @@ namespace {
                             static::$relations['parent_categories'][$id] = array();
                         }
                         array_push(static::$relations['parent_categories'][$id], $pid);
+                        echo $id;
                         $pid = self::get_parent_id($pid);
                     }
                 }
