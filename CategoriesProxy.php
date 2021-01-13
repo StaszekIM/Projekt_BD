@@ -2,9 +2,9 @@
 
 namespace {
 
-    //ini_set('display_errors', 1);
-    //ini_set('display_startup_errors', 1);
-    //error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
 
     include "DBConnection.php";
 
@@ -103,7 +103,7 @@ namespace {
                 return static::$relations['parent_categories'][$id];
             }else {
                 $dbconn = Connection::getPDO();
-                $stmt = $dbconn -> prepare("select values from cache.parent_categories where id = :id");
+                $stmt = $dbconn -> prepare('select "values" from cache.parent_categories where id = :id');
                 $success = $stmt -> execute([':id' => $id]);
                 $res = $stmt -> fetch(PDO::FETCH_ASSOC);
                 return $res;
@@ -114,18 +114,19 @@ namespace {
             $id = self::get_id_by_name($name);
             $dbconn = Connection::getPDO();
             $subs = null;
-            if (static::$relations['subcategories'] != null) {
+            if (static::$relations != null && array_key_exists($id, static::$relations['subcategories'])) {
                 $subs = static::$relations['subcategories'][$id];
             }else {
-                $stmt = $dbconn -> prepare("select values from cache.parent_categories where id = :id");
+                $stmt = $dbconn -> prepare('select "values" from cache.subcategories where id = :id');
                 $stmt -> execute([':id' => $id]);
-                $subs =  $stmt -> fetch(PDO::FETCH_ASSOC)['values'];
+                $subs = $stmt -> fetch(PDO::FETCH_ASSOC)['values'];
+                $subs = $this -> pg_array_parse($subs);
             }
             $res = array();
             foreach ($subs as $sid) {
-                $stmt = $dbconn -> prepare("select name from shop.categories where id = :sid)");
-                $stmt -> execute();
-                array_push($res, $stmt -> fetch()['name']);
+                $stmt = $dbconn->prepare('select "name" from shop.categories where id = :sid');
+                $stmt->execute([':sid' => $sid]);
+                array_push($res, $stmt->fetch(PDO::FETCH_ASSOC)['name']);
             }
             return $res;
         }
@@ -219,6 +220,43 @@ namespace {
                 }
             }
             return '{' . implode(",", $result) . '}'; // format
+        }
+
+        private function pg_array_parse($s, $start = 0, &$end = null)
+        {
+            if (empty($s) || $s[0] != '{') return null;
+            $return = array();
+            $string = false;
+            $quote='';
+            $len = strlen($s);
+            $v = '';
+            for ($i = $start + 1; $i < $len; $i++) {
+                $ch = $s[$i];
+
+                if (!$string && $ch == '}') {
+                    if ($v !== '' || !empty($return)) {
+                        $return[] = $v;
+                    }
+                    $end = $i;
+                    break;
+                } elseif (!$string && $ch == '{') {
+                    $v = pg_array_parse($s, $i, $i);
+                } elseif (!$string && $ch == ','){
+                    $return[] = $v;
+                    $v = '';
+                } elseif (!$string && ($ch == '"' || $ch == "'")) {
+                    $string = true;
+                    $quote = $ch;
+                } elseif ($string && $ch == $quote && $s[$i - 1] == "\\") {
+                    $v = substr($v, 0, -1) . $ch;
+                } elseif ($string && $ch == $quote && $s[$i - 1] != "\\") {
+                    $string = false;
+                } else {
+                    $v .= $ch;
+                }
+            }
+
+            return $return;
         }
 
         protected function __construct()

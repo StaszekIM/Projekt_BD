@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
-    <title>Shop | E-Shopper</title>
+    <title>BD G22</title>
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/font-awesome.min.css" rel="stylesheet">
     <link href="css/prettyPhoto.css" rel="stylesheet">
@@ -105,11 +105,25 @@
 
 								try {
                                     $dbconn = Connection::getPDO();
-                                    $stmt = $dbconn -> prepare("select id, parent_id, name from shop.categories");
-                                    $success = $stmt -> execute();
+                                    $proxy = CategoriesProxy::get();
+                                    $success = false;
+                                    $data = null;
+                                    if ($_SERVER['REQUEST_METHOD'] == 'GET' && !isset($_GET['cat'])) {
+                                        $stmt = $dbconn->prepare("select id, parent_id, name from shop.categories");
+                                        $success = $stmt->execute();
+                                        $data = $stmt->fetchAll();
+                                    }else {
+                                        $data = [['name' => $_GET['cat'], 'parent_id' => null]];
+                                        //$tmp = $proxy -> get_subcategories($_GET['cat']);
+                                        //$data = array();
+                                        //foreach ($tmp as $item) {
+                                        //    array_push($data, ['name' => $item, 'parent_id' => null]);
+                                        //}
+                                        $success = true;
+                                    }
                                     if ($success) {
-                                        $proxy = CategoriesProxy::get();
-                                        foreach ($stmt->fetchAll() as $row) {
+                                        foreach ($data as $row) {
+                                            // Display only top categories if none was specified
                                             if ($row['parent_id'] != null) continue;
                                             echo '
                                                 <div class="panel panel-default">
@@ -120,7 +134,7 @@
 							                    				' . $row['name'] . '
 							                    			</a>
 							                    		</h4>
-							                    	</div>' ;
+							                    	</div>';
                                             $subs = $proxy -> get_subcategories($row['name']);
                                             if ($subs != null) {
                                                 echo '
@@ -128,13 +142,13 @@
 							                    		<div class="panel-body">
 							                    			<ul>';
                                                 foreach($subs as $name) {
-                                                    echo '<li><a href="">' . $name . ' </a></li>';
+                                                    echo '<li><a href="/shop.php?cat=' . $name . '">' . $name . ' </a></li>';
                                                 }
                                                 echo        '</ul>
 							                    		</div>
 							                    	</div>';
                                             }
-                                            echo '</div>'; //<div class="panel panel-default">
+                                            echo '</div>';
                                         }
 
                                     }else throw new RuntimeException();

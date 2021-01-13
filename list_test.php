@@ -8,4 +8,8 @@ include "CategoriesProxy.php";
 $proxy = CategoriesProxy::get();
 echo $proxy -> list_hierarchy_up("Czarne");
 
+foreach ($proxy -> get_subcategories("Myszki") as $id){
+    echo $id;
+}
+
 ?>
