@@ -99,7 +99,34 @@ namespace {
          */
         public function list_hierarchy_up(string $name){
             $id = self::get_id_by_name($name);
-            return static::$relations['parent_categories'][$id];
+            if (static::$relations['parent_categories'] != null) {
+                return static::$relations['parent_categories'][$id];
+            }else {
+                $dbconn = Connection::getPDO();
+                $stmt = $dbconn -> prepare("select values from cache.parent_categories where id = :id");
+                $success = $stmt -> execute([':id' => $id]);
+                return $stmt -> fetch()['values'];
+            }
+        }
+
+        public function get_subcategories(string $name){
+            $id = self::get_id_by_name($name);
+            $dbconn = Connection::getPDO();
+            $subs = null;
+            if (static::$relations['subcategories'] != null) {
+                $subs = static::$relations['subcategories'][$id];
+            }else {
+                $stmt = $dbconn -> prepare("select values from cache.parent_categories where id = :id");
+                $stmt -> execute([':id' => $id]);
+                $subs =  $stmt -> fetch()['values'];
+            }
+            $res = array();
+            foreach ($subs as $sid) {
+                $stmt = $dbconn -> prepare("select name from shop.categories where id = :sid)");
+                $stmt -> execute();
+                array_push($res, $stmt -> fetch()['name']);
+            }
+            return $res;
         }
 
         /**
@@ -165,10 +192,26 @@ namespace {
             foreach (array_keys(static::$relations['subcategories']) as $key){
                 $id = $key;
                 $vals = static::$relations['subcategories'][$id];
-                $stmt -> execute(['id' => $id, 'vals' => $vals]);
+                $stmt -> execute(['id' => $id, 'vals' => $this->to_pg_array($vals)]);
             }
 
 
+        }
+
+        private function to_pg_array($set) {
+            settype($set, 'array'); // can be called with a scalar or array
+            $result = array();
+            foreach ($set as $t) {
+                if (is_array($t)) {
+                    $result[] = to_pg_array($t);
+                } else {
+                    $t = str_replace('"', '\\"', $t); // escape double quote
+                    if (! is_numeric($t)) // quote only non-numeric values
+                        $t = '"' . $t . '"';
+                    $result[] = $t;
+                }
+            }
+            return '{' . implode(",", $result) . '}'; // format
         }
 
         protected function __construct()
