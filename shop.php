@@ -102,6 +102,7 @@
 							<?php
 								//include "DBConnection.php";
 								include "CategoriesProxy.php";
+                                session_start();
 
 								try {
                                     $dbconn = Connection::getPDO();
