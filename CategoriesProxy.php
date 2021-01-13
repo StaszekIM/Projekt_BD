@@ -99,7 +99,7 @@ namespace {
          */
         public function list_hierarchy_up(string $name){
             $id = self::get_id_by_name($name);
-            if (array_key_exists(static::$relations['parent_categories'], $id)) {
+            if (array_key_exists($id, static::$relations['parent_categories'])) {
                 return static::$relations['parent_categories'][$id];
             }else {
                 $dbconn = Connection::getPDO();
