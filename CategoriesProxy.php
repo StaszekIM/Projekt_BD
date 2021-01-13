@@ -2,9 +2,9 @@
 
 namespace {
 
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);
-    error_reporting(E_ALL);
+    //ini_set('display_errors', 1);
+    //ini_set('display_startup_errors', 1);
+    //error_reporting(E_ALL);
 
     include "DBConnection.php";
 
@@ -73,7 +73,7 @@ namespace {
                     }
                 }
 
-                self::save();
+                $this -> save();
 
             } else {
                 throw new RuntimeException;
@@ -99,13 +99,14 @@ namespace {
          */
         public function list_hierarchy_up(string $name){
             $id = self::get_id_by_name($name);
-            if (array_key_exists($id, static::$relations['parent_categories'])) {
+            if (static::$relations != null && array_key_exists($id, static::$relations['parent_categories'])) {
                 return static::$relations['parent_categories'][$id];
             }else {
                 $dbconn = Connection::getPDO();
                 $stmt = $dbconn -> prepare("select values from cache.parent_categories where id = :id");
                 $success = $stmt -> execute([':id' => $id]);
-                return $stmt -> fetch()['values'];
+                $res = $stmt -> fetch(PDO::FETCH_ASSOC);
+                return $res;
             }
         }
 
@@ -118,7 +119,7 @@ namespace {
             }else {
                 $stmt = $dbconn -> prepare("select values from cache.parent_categories where id = :id");
                 $stmt -> execute([':id' => $id]);
-                $subs =  $stmt -> fetch()['values'];
+                $subs =  $stmt -> fetch(PDO::FETCH_ASSOC)['values'];
             }
             $res = array();
             foreach ($subs as $sid) {
@@ -192,6 +193,12 @@ namespace {
             foreach (array_keys(static::$relations['subcategories']) as $key){
                 $id = $key;
                 $vals = static::$relations['subcategories'][$id];
+                $stmt -> execute(['id' => $id, 'vals' => $this->to_pg_array($vals)]);
+            }
+            $stmt = $dbconn -> prepare('insert into cache.parent_categories (id, "values") values (:id, :vals)');
+            foreach (array_keys(static::$relations['parent_categories']) as $key){
+                $id = $key;
+                $vals = static::$relations['parent_categories'][$id];
                 $stmt -> execute(['id' => $id, 'vals' => $this->to_pg_array($vals)]);
             }
 

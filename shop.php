@@ -100,16 +100,17 @@
 						<h2>Category</h2>
 						<div class="panel-group category-products" id="accordian"><!--category-productsr-->
 							<?php
-								include "DBConnection.php";
+								//include "DBConnection.php";
 								include "CategoriesProxy.php";
 
 								try {
-                                    $dbconn = Connection::get();
-                                    $stmt = $dbconn -> prepare("select id, name from shop.categories");
+                                    $dbconn = Connection::getPDO();
+                                    $stmt = $dbconn -> prepare("select id, parent_id, name from shop.categories");
                                     $success = $stmt -> execute();
                                     if ($success) {
-
+                                        $proxy = CategoriesProxy::get();
                                         foreach ($stmt->fetchAll() as $row) {
+                                            if ($row['parent_id'] != null) continue;
                                             echo '
                                                 <div class="panel panel-default">
 							                    	<div class="panel-heading">
@@ -119,13 +120,11 @@
 							                    				' . $row['name'] . '
 							                    			</a>
 							                    		</h4>
-							                    	</div>
-							                    	
-							                    </div>';
-                                            $subs = CategoriesProxy::get_subcategories();
+							                    	</div>' ;
+                                            $subs = $proxy -> get_subcategories($row['name']);
                                             if ($subs != null) {
                                                 echo '
-                                                     <div id="sportswear" class="panel-collapse collapse">
+                                                     <div id="' . $row['name'] . '" class="panel-collapse collapse">
 							                    		<div class="panel-body">
 							                    			<ul>';
                                                 foreach($subs as $name) {
@@ -135,6 +134,7 @@
 							                    		</div>
 							                    	</div>';
                                             }
+                                            echo '</div>'; //<div class="panel panel-default">
                                         }
 
                                     }else throw new RuntimeException();
