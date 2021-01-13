@@ -16,10 +16,10 @@ namespace {
          *  - subcategories and parent_categories
          *  - each of above has \Ds\Map storing \Ds\Set as values and using IDs as keys [Map<int, Set>]
          *    (a = static::$relations['subcategories'].get($id); - Get set of subcategories for category with $id) */
-        private static array $relations;
+        private static ?array $relations = null;
         // Category ID -> Category class map (id, name, pid)
-        private static array $categories;
-        private static array $named_categories;
+        private static ?array $categories = null;
+        private static ?array $named_categories = null;
 
         /**
          * Downloads and processes data from data base then saves results in cache in DB
@@ -99,7 +99,7 @@ namespace {
          */
         public function list_hierarchy_up(string $name){
             $id = self::get_id_by_name($name);
-            if (static::$relations['parent_categories'] != null) {
+            if (array_key_exists(static::$relations['parent_categories'], $id)) {
                 return static::$relations['parent_categories'][$id];
             }else {
                 $dbconn = Connection::getPDO();
@@ -162,7 +162,7 @@ namespace {
         }
 
         private function get_id_by_name(string $name){
-            if (static::$named_categories != null) static::$named_categories[$name] -> id;
+            if (static::$named_categories != null) return static::$named_categories[$name] -> id;
             else {
                 $dbconn = Connection::getPDO();
                 $stmt = $dbconn -> prepare("select id from shop.categories where name = :name");
