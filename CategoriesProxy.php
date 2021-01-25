@@ -97,8 +97,9 @@ namespace {
          * @param string $name Name of the category
          * @return array Ordered list of IDs of parent categories, starting with direct one and going up
          */
-        public function list_hierarchy_up(string $name){
-            $id = self::get_id_by_name($name);
+        public function list_hierarchy_up($name){
+            if (is_string($name)) $id = self::get_id_by_name($name);
+            elseif (is_integer($name)) $id = $name;
             if (static::$relations != null && array_key_exists($id, static::$relations['parent_categories'])) {
                 return static::$relations['parent_categories'][$id];
             }else {
@@ -110,8 +111,14 @@ namespace {
             }
         }
 
-        public function get_subcategories(string $name){
-            $id = self::get_id_by_name($name);
+        /**
+         * @param $name Use ID f category to avoid ambiguity, name also allowed but duplicates may be present
+         * @return array
+         */
+        public function get_subcategories($name){
+            if (is_string($name)) $id = self::get_id_by_name($name);
+            elseif (is_integer($name)) $id = $name;
+            else return null;
             $dbconn = Connection::getPDO();
             $subs = null;
             if (static::$relations != null && array_key_exists($id, static::$relations['subcategories'])) {
@@ -119,14 +126,16 @@ namespace {
             }else {
                 $stmt = $dbconn -> prepare('select "values" from cache.subcategories where id = :id');
                 $stmt -> execute([':id' => $id]);
-                $subs = $stmt -> fetch(PDO::FETCH_ASSOC)['values'];
+                $subs = $stmt -> fetch(PDO::FETCH_ASSOC);
+                if (!$subs) return null;
+                $subs = $subs['values'];
                 $subs = $this -> pg_array_parse($subs);
             }
             $res = array();
             foreach ($subs as $sid) {
-                $stmt = $dbconn->prepare('select "name" from shop.categories where id = :sid');
+                $stmt = $dbconn->prepare('select "name", id from shop.categories where id = :sid');
                 $stmt->execute([':sid' => $sid]);
-                array_push($res, $stmt->fetch(PDO::FETCH_ASSOC)['name']);
+                array_push($res, $stmt->fetch(PDO::FETCH_ASSOC));
             }
             return $res;
         }

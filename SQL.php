@@ -12,7 +12,7 @@ if (isset($_GET['cat'])) {
     }else {
 
         $stmt = $dbconn -> prepare('select * from shop.products where cid = (select id from categories where "name" = :cname)');
-        $stmt -> execute(['cname' => $_GET['cat'], 'bname' => $_GET['brd']]);
+        $stmt -> execute(['cname' => $_GET['cat']]);
         $data = $stmt -> fetchAll();
 
     }
@@ -20,13 +20,13 @@ if (isset($_GET['cat'])) {
 }elseif (isset($_GET['brd'])) {
 
     $stmt = $dbconn -> prepare('select * from shop.products where bid = (select id from shop.brands where "name" = :bname)');
-    $stmt -> execute(['cname' => $_GET['cat'], 'bname' => $_GET['brd']]);
+    $stmt -> execute(['bname' => $_GET['brd']]);
     $data = $stmt -> fetchAll();
 
 }else {
 
     $stmt = $dbconn -> prepare('select * from shop.products');
-    $stmt -> execute(['cname' => $_GET['cat'], 'bname' => $_GET['brd']]);
+    $stmt -> execute();
     $data = $stmt -> fetchAll();
 
 }

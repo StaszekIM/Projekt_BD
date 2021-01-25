@@ -24,7 +24,7 @@
     <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57-precomposed.png">
 </head><!--/head-->
 
-<body>
+<sc>
 	<header id="header"><!--header-->
 		
 		<div class="header-middle"><!--header-middle-->
@@ -102,6 +102,7 @@
 							<?php
 								//include "DBConnection.php";
 								include "CategoriesProxy.php";
+								include "helpers.php";
                                 session_start();
 
 								try {
@@ -114,7 +115,10 @@
                                         $success = $stmt->execute();
                                         $data = $stmt->fetchAll();
                                     }else {
-                                        $data = [['name' => $_GET['cat'], 'parent_id' => null]];
+                                        $stmt = $dbconn -> prepare('select "name" from shop.categories where id = :id');
+                                        $stmt -> execute([':id' => $_GET['cat']]);
+                                        $tmp = $stmt -> fetch(PDO::FETCH_ASSOC)['name'];
+                                        $data = [['name' => $tmp, 'id' => intval($_GET['cat']), 'parent_id' => null]];
                                         //$tmp = $proxy -> get_subcategories($_GET['cat']);
                                         //$data = array();
                                         //foreach ($tmp as $item) {
@@ -130,20 +134,20 @@
                                                 <div class="panel panel-default">
 							                    	<div class="panel-heading">
 							                    		<h4 class="panel-title">
-							                    			<a data-toggle="collapse" data-parent="#accordian" href="#' . $row['name'] . '">
+							                    			<a data-toggle="collapse" data-parent="#accordian">
 							                    				<span class="badge pull-right"><i class="fa fa-plus"></i></span>
-							                    				' . $row['name'] . '
+							                    				    <a href="' . get_path_and_query("cat", $row['id']) . '">' . $row['name'] . '</a>
 							                    			</a>
 							                    		</h4>
 							                    	</div>';
-                                            $subs = $proxy -> get_subcategories($row['name']);
+                                            $subs = $proxy -> get_subcategories($row['id']);
                                             if ($subs != null) {
                                                 echo '
                                                      <div id="' . $row['name'] . '" class="panel-collapse collapse">
 							                    		<div class="panel-body">
 							                    			<ul>';
-                                                foreach($subs as $name) {
-                                                    echo '<li><a href="/shop.php?cat=' . $name . '">' . $name . ' </a></li>';
+                                                foreach($subs as $rec) {
+                                                    echo '<li><a href="/shop.php?cat=' . $rec['id'] . '">' . $rec['name'] . ' </a></li>';
                                                 }
                                                 echo        '</ul>
 							                    		</div>
@@ -159,30 +163,50 @@
 
 							?>
 
-							<div class="panel panel-default">
-								<div class="panel-heading">
-									<h4 class="panel-title"><a href="#">Kids</a></h4>
-								</div>
-							</div>
-							<div class="panel panel-default">
-								<div class="panel-heading">
-									<h4 class="panel-title"><a href="#">Fashion</a></h4>
-								</div>
-							</div>
-
 						</div><!--/category-productsr-->
 					
 						<div class="brands_products"><!--brands_products-->
 							<h2>Brands</h2>
 							<div class="brands-name">
 								<ul class="nav nav-pills nav-stacked">
-									<li><a href=""> <span class="pull-right">(50)</span>Acne</a></li>
-									<li><a href=""> <span class="pull-right">(56)</span>Grüne Erde</a></li>
-									<li><a href=""> <span class="pull-right">(27)</span>Albiro</a></li>
-									<li><a href=""> <span class="pull-right">(32)</span>Ronhill</a></li>
-									<li><a href=""> <span class="pull-right">(5)</span>Oddmolly</a></li>
-									<li><a href=""> <span class="pull-right">(9)</span>Boudestijn</a></li>
-									<li><a href=""> <span class="pull-right">(4)</span>Rösch creative culture</a></li>
+                                    <?php
+                                    $success = false;
+                                    $data = null;
+                                    if ($_SERVER['REQUEST_METHOD'] == 'GET' && !isset($_GET['brd'])) {
+                                        $stmt = $dbconn->prepare("select id, name from shop.brands");
+                                        $success = $stmt->execute();
+                                        $data = $stmt->fetchAll();
+                                    }else {
+                                        $stmt = $dbconn -> prepare('select "name" from shop.brands where id = :id');
+                                        $stmt -> execute([':id' => $_GET['brd']]);
+                                        $tmp = $stmt -> fetch(PDO::FETCH_ASSOC)['name'];
+                                        $data = [['id' => intval($_GET['brd']), 'name' => $tmp]];
+                                        $success = true;
+                                    }
+                                    if ($success) {
+                                        $link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+                                        // $t = preg_match("\/.*\?[a-z]+.*=.*", $_SERVER['REQUEST_URI']);
+                                        foreach ($data as $row) {
+                                            if (!isset($_GET['brd'])) {
+                                                if (count(array_keys($_GET)) == 0) $x = "?brd=";
+                                                else $x = "&brd=";
+                                                echo '<li><a href="' . $link . $x . $row['id'] . '"> <span class="pull-right"></span>' . $row['name'] . '</a></li>';
+                                            }
+                                            // Brands parameter was present so reconstruct other used in query and add new brand id
+                                            else {
+                                                $query = "?";
+                                                foreach (array_keys($_GET) as $key) {
+                                                    if ($key == 'brd') continue;
+                                                    if ($query != "?") $query .= "&";
+                                                    $query .= $key . "=" . $_GET[$key];
+                                                }
+                                                $query .= "&brd=" . $row['id'];
+                                                preg_match("/\/.*(?=\?)?/", $_SERVER['REQUEST_URI'], $matches, PREG_OFFSET_CAPTURE); // Match path without query
+                                                echo '<li><a href="' . $matches[0][0] . $query . '"> <span class="pull-right"></span>' . $row['name'] . '</a></li>';
+                                            }
+                                        }
+                                    }
+                                    ?>
 								</ul>
 							</div>
 						</div><!--/brands_products-->
@@ -201,315 +225,84 @@
 				<div class="col-sm-9 padding-right">
 					<div class="features_items"><!--features_items-->
 						<h2 class="title text-center">Features Items</h2>
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/shop/product12.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/shop/product11.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/shop/product10.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/shop/product9.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-									<img src="images/home/new.png" class="new" alt="" />
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/shop/product8.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-									<img src="images/home/sale.png" class="new" alt="" />
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/shop/product7.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/home/product6.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/home/product5.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/home/product4.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						
+                        <?php
+                        $dbconn = Connection::getPDO();
+                        if (isset($_GET['cat'])) {
+
+                            $tmp_cids = $proxy -> get_subcategories(intval($_GET['cat']));
+                            $queue = array();
+                            $cids = array();
+                            while ($tmp_cids != null) {
+                                foreach ($tmp_cids as $row) {
+                                    array_push($cids, intval($row['id']));
+                                    array_push($queue, intval($row['id']));
+                                }
+                                $tmp_cids = $proxy -> get_subcategories(array_pop($queue));
+                            }
+                            array_push($cids, intval($_GET['cat']));
+                            //$cids = to_pg_array($cids);
+                            //$cids[0] = '(';
+                            //$cids[strlen($cids)-1] = ')';
+
+                            if (isset($_GET['brd'])) {
+
+                                $stmt = $dbconn -> prepare('select * from shop.products where bid = :bid and cid in (' . implode(',', $cids) . ')');
+                                $stmt -> execute(['bid' => intval($_GET['brd'])]);
+                                $data = $stmt -> fetchAll();
+
+                            }else {
+
+                                $stmt = $dbconn -> prepare('select * from shop.products where cid in (' . implode(',', $cids) . ')'); // Input is safe based on how $cids variable is created
+                                $stmt -> execute(); // Using parameter substitution here causes errors
+                                $data = $stmt -> fetchAll();
+
+                            }
+
+                        }elseif (isset($_GET['brd'])) {
+
+                            $stmt = $dbconn -> prepare('select * from shop.products where bid = :bid');
+                            $stmt -> execute(['bid' => intval($_GET['brd'])]);
+                            $data = $stmt -> fetchAll();
+
+                        }else {
+
+                            $stmt = $dbconn -> prepare('select * from shop.products');
+                            $stmt -> execute();
+                            $data = $stmt -> fetchAll();
+
+                        }
+                        foreach ($data as $product) {
+                            echo '
+                            <div class="col-sm-4">
+						    	<div class="product-image-wrapper">
+						    		<div class="single-products">
+						    			<div class="productinfo text-center">
+						    				<img src="images/shop/product8.jpg" alt="" />
+						    				<h2 class="price">' . $product['price'] . '</h2>
+						    				<p>' . $product['name'] . '</p> 
+						    				<p hidden class="id">' . $product['id'] . '</p>
+						    				<a onclick="add_to_cart(this);" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
+						    			</div>
+						    			<img src="images/home/sale.png" class="new" alt="" />
+						    		</div>
+						    	</div>
+						    </div>';
+                        }
+                        ?>
+
 						<div class="col-sm-4">
 							<div class="product-image-wrapper">
 								<div class="single-products">
 									<div class="productinfo text-center">
 										<img src="images/home/product3.jpg" alt="" />
 										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
+										<p>HTML placeholder</p>
 										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
 									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
 								</div>
 							</div>
 						</div>
-						
-						
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/home/product2.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
-						
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/home/product1.jpg" alt="" />
-										<h2>$56</h2>
-										<p>Easy Polo Black Edition</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-									<div class="product-overlay">
-										<div class="overlay-content">
-											<h2>$56</h2>
-											<p>Easy Polo Black Edition</p>
-											<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-										</div>
-									</div>
-								</div>
-								<div class="choose">
-									<ul class="nav nav-pills nav-justified">
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to wishlist</a></li>
-										<li><a href=""><i class="fa fa-plus-square"></i>Add to compare</a></li>
-									</ul>
-								</div>
-							</div>
-						</div>
+
 						
 						<ul class="pagination">
 							<li class="active"><a href="">1</a></li>
@@ -530,5 +323,6 @@
 	<script src="js/bootstrap.min.js"></script>
     <script src="js/jquery.prettyPhoto.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/cart.js"></script>
 </body>
 </html>
