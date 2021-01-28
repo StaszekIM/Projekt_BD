@@ -12,10 +12,6 @@ namespace {
     {
 
         private static ?CategoriesProxy $instance = null;
-        /* Structure of relations:
-         *  - subcategories and parent_categories
-         *  - each of above has \Ds\Map storing \Ds\Set as values and using IDs as keys [Map<int, Set>]
-         *    (a = static::$relations['subcategories'].get($id); - Get set of subcategories for category with $id) */
         private static ?array $relations = null;
         // Category ID -> Category class map (id, name, pid)
         private static ?array $categories = null;
@@ -32,6 +28,8 @@ namespace {
             static::$relations['subcategories'] = array();
             static::$relations['parent_categories'] = array();
             $dbconn = Connection::getPDO();
+            $dbconn -> beginTransaction();
+            $dbconn -> prepare("lock table shop.categories in access exclusive mode"); // Do not allow any actions on categories whilst they are porcessed
             $stmt = $dbconn->prepare("select * from shop.categories");
             $success = $stmt->execute();
 
@@ -74,9 +72,11 @@ namespace {
                 }
 
                 $this -> save();
+                $dbconn -> commit(); // Release lock
 
             } else {
                 throw new RuntimeException;
+                $dbconn -> commit();
             }
 
         }

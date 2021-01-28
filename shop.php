@@ -40,7 +40,7 @@
 							<ul class="nav navbar-nav">
 								<li><a href=""><i class="fa fa-user"></i> Account</a></li>
 								<li><a href="checkout.html"><i class="fa fa-crosshairs"></i> Checkout</a></li>
-								<li><a href="cart.html"><i class="fa fa-shopping-cart"></i> Cart</a></li>
+								<li><a href="cart.php"><i class="fa fa-shopping-cart"></i> Cart</a></li>
 								<li><a href="login.html"><i class="fa fa-lock"></i> Login</a></li>
 							</ul>
 						</div>
@@ -69,7 +69,7 @@
                                         <li><a href="shop.html" class="active">Products</a></li>
 										<li><a href="product-details.html">Product Details</a></li> 
 										<li><a href="checkout.html">Checkout</a></li> 
-										<li><a href="cart.html">Cart</a></li> 
+										<li><a href="cart.php">Cart</a></li>
 										<li><a href="login.html">Login</a></li> 
                                     </ul>
                                 </li>
@@ -134,13 +134,13 @@
                                                 <div class="panel panel-default">
 							                    	<div class="panel-heading">
 							                    		<h4 class="panel-title">
-							                    			<a data-toggle="collapse" data-parent="#accordian">
+							                    			<a data-toggle="collapse" data-parent="#accordian" href="#' . $row['name'] . '">
 							                    				<span class="badge pull-right"><i class="fa fa-plus"></i></span>
 							                    				    <a href="' . get_path_and_query("cat", $row['id']) . '">' . $row['name'] . '</a>
 							                    			</a>
 							                    		</h4>
 							                    	</div>';
-                                            $subs = $proxy -> get_subcategories($row['id']);
+                                            $subs = $proxy -> get_subcategories(intval($row['id']));
                                             if ($subs != null) {
                                                 echo '
                                                      <div id="' . $row['name'] . '" class="panel-collapse collapse">
@@ -227,12 +227,28 @@
 						<h2 class="title text-center">Features Items</h2>
                         <?php
                         $dbconn = Connection::getPDO();
+
+                        if (!isset($_GET['page'])) {
+                            // Defaults
+                            $page = 1;
+                            $offset = 0;
+                        }
+                        else {
+                            try { // Try get requested values
+                                $page = intval($_GET['page']);
+                                $offset = ($page - 1) * 9;
+                            }catch (Exception $e) { // If wrong GET parameter was supplied then just go with defaults
+                                $page = 1;
+                                $offset = 0;
+                            }
+                        }
+
                         if (isset($_GET['cat'])) {
 
                             $tmp_cids = $proxy -> get_subcategories(intval($_GET['cat']));
                             $queue = array();
                             $cids = array();
-                            while ($tmp_cids != null) {
+                            while ($tmp_cids != null) { // Getting all IDs (for selected category and all children)
                                 foreach ($tmp_cids as $row) {
                                     array_push($cids, intval($row['id']));
                                     array_push($queue, intval($row['id']));
@@ -240,33 +256,30 @@
                                 $tmp_cids = $proxy -> get_subcategories(array_pop($queue));
                             }
                             array_push($cids, intval($_GET['cat']));
-                            //$cids = to_pg_array($cids);
-                            //$cids[0] = '(';
-                            //$cids[strlen($cids)-1] = ')';
 
                             if (isset($_GET['brd'])) {
-
-                                $stmt = $dbconn -> prepare('select * from shop.products where bid = :bid and cid in (' . implode(',', $cids) . ')');
+                                // Categories and brands filter
+                                $stmt = $dbconn -> prepare('select * from shop.products where bid = :bid and cid in (' . implode(',', $cids) . ') order by id asc limit 9 offset ' . $offset);
                                 $stmt -> execute(['bid' => intval($_GET['brd'])]);
                                 $data = $stmt -> fetchAll();
 
                             }else {
-
-                                $stmt = $dbconn -> prepare('select * from shop.products where cid in (' . implode(',', $cids) . ')'); // Input is safe based on how $cids variable is created
+                                // Categories filter
+                                $stmt = $dbconn -> prepare('select * from shop.products where cid in (' . implode(',', $cids) . ') order by id asc limit 9 offset ' . $offset); // Input is safe based on how $cids variable is created
                                 $stmt -> execute(); // Using parameter substitution here causes errors
                                 $data = $stmt -> fetchAll();
 
                             }
 
                         }elseif (isset($_GET['brd'])) {
-
-                            $stmt = $dbconn -> prepare('select * from shop.products where bid = :bid');
+                            // Brands filter
+                            $stmt = $dbconn -> prepare('select * from shop.products where bid = :bid order by id asc limit 9 offset ' . $offset);
                             $stmt -> execute(['bid' => intval($_GET['brd'])]);
                             $data = $stmt -> fetchAll();
 
                         }else {
-
-                            $stmt = $dbconn -> prepare('select * from shop.products');
+                            // No filters
+                            $stmt = $dbconn -> prepare('select * from shop.products order by id asc limit 9 offset ' . $offset);
                             $stmt -> execute();
                             $data = $stmt -> fetchAll();
 
@@ -305,10 +318,19 @@
 
 						
 						<ul class="pagination">
-							<li class="active"><a href="">1</a></li>
-							<li><a href="">2</a></li>
-							<li><a href="">3</a></li>
-							<li><a href="">&raquo;</a></li>
+                            <?php
+                            $stmt = $dbconn -> prepare("select count(id) as cnt from shop.products");
+                            $stmt -> execute();
+                            $cnt = intval($stmt->fetch()['cnt']);
+                            if ($cnt <= 9 * $page) $max = $page;
+                            else $max = $page + 1;
+                            if ($page > 1) $i = $page - 1;
+                            else $i = $page;
+                            for (; $i <= $max; ++$i) {
+                                echo '<li><a href="' . get_path_and_query("page", $i) . '">' . $i . '</a></li>';
+                            }
+                            echo '<li><a href="' . get_path_and_query("page", max( 1, floor($cnt/9))) . '">&raquo;</a></li>';
+                            ?>
 						</ul>
 					</div><!--features_items-->
 				</div>
