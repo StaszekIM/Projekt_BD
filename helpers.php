@@ -1,5 +1,10 @@
 <?php
 
+/** Edit query and keep current path and rest of the query
+ * @param string $param Name of parameter to be changed
+ * @param $val Desired value of $param
+ * @return string Current path and query with changed / added $param=$val in query
+ */
 function get_path_and_query(string $param, $val) {
     $query = "?";
     foreach (array_keys($_GET) as $key) {
@@ -15,6 +20,10 @@ function get_path_and_query(string $param, $val) {
     return $path . $query;
 }
 
+/**
+ * @param $set Scalar or array accepted
+ * @return string Input value converted to format accepted by postgres
+ */
 function to_pg_array($set) {
     settype($set, 'array'); // can be called with a scalar or array
     $result = array();
@@ -31,6 +40,12 @@ function to_pg_array($set) {
     return '{' . implode(",", $result) . '}'; // format
 }
 
+/** Parse array in postgres format to PHP array
+ * @param $s Input postgres array
+ * @param int $start
+ * @param null $end
+ * @return array|null Parsed array or null if input was empty
+ */
 function pg_array_parse($s, $start = 0, &$end = null)
 {
     if (empty($s) || $s[0] != '{') return null;

@@ -6,7 +6,9 @@ if ($_SERVER['REQUEST_METHOD'] != 'POST'){
 }
 session_start();
 try {
-    array_push($_SESSION['cart'], $_POST['id']);
+    if (!isset($_SESSION['cart'])) $_SESSION['cart'] = array();
+    $val = intval($_POST['id']);
+    if (!in_array($val, $_SESSION['cart'])) array_push($_SESSION['cart'], $val);
     http_response_code(200);
 }catch (Exception $e) {
     http_response_code(500);

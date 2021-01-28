@@ -24,7 +24,7 @@
     <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57-precomposed.png">
 </head><!--/head-->
 
-<sc>
+<body>
 	<header id="header"><!--header-->
 		
 		<div class="header-middle"><!--header-middle-->

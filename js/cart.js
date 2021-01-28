@@ -19,3 +19,18 @@ var add_to_cart = function (elem) {
         }
     });
 }
+
+var delete_from_cart = function(elem, id) {
+    let request = new XMLHttpRequest();
+    request.open('GET', '/delete_from_cart.php?id=' + id);
+    request.onload = function () {
+        if (request.readyState === 4) {
+            if (request.status === 200) {
+                elem.parentElement.parentElement.remove();
+            } else {
+                alert("Fail");
+            }
+        }
+    };
+    request.send();
+}

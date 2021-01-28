@@ -16,7 +16,7 @@ if ($method == 'GET'){
     $password = $_POST['password'];
 
     $dbconn = Connection::getPDO();
-    $stmt = $dbconn -> prepare('select password, id from shop.users where email = :email');
+    $stmt = $dbconn -> prepare('select "password", "id" from shop.users where email = :email');
     $success = $stmt -> execute(['email' => $username]);
     $row = $stmt -> fetch(PDO::FETCH_ASSOC);
 
