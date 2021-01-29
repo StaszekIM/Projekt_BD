@@ -3,6 +3,10 @@ include "DBConnection.php";
 
 if ($_SERVER['REQUEST_METHOD'] == "POST"){
     session_start();
+    if (!isset($_SESSION['id'])) {
+        echo '<a href="/login.php">Login first</a>';
+        http_send_status(401);
+    }
     $dbconn = Connection::getPDO();
     $dbconn->beginTransaction();
     try {

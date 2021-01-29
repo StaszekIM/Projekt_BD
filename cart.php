@@ -118,9 +118,9 @@
 							</td>
 							<td class="cart_quantity">
 								<div class="cart_quantity_button">
-									<a class="cart_quantity_up" href=""> + </a>
-									<input class="cart_quantity_input" type="text" name="' . $item . '" value="2" autocomplete="off" size="2">
-									<a class="cart_quantity_down" href=""> - </a>
+									<!-- <a class="cart_quantity_up" href=""> + </a> -->
+									<input class="cart_quantity_input" type="number" name="' . $item . '" value="2" autocomplete="off" size="2" onchange="calculate_total();">
+									<!-- <a class="cart_quantity_down" href=""> - </a> -->
 								</div>
 							</td>
 							<td class="cart_total">
@@ -164,6 +164,6 @@
     <script src="/js/jquery.prettyPhoto.js"></script>
     <script src="/js/main.js"></script>
     <script src="/js/total.js"></script>
-    <script src="js/cart.js"></script>
+    <script src="/js/cart.js"></script>
 </body>
 </html>

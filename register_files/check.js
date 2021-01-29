@@ -22,7 +22,7 @@ var check_email = function() {
         document.getElementById('email-note').hidden = true;
     }
     let request = new XMLHttpRequest();
-    request.open('POST', 'https://bmp.mrysnik.site/is_email_valid.php');
+    request.open('POST', '/is_email_valid.php');
     request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
     request.onload = function () {
         if (request.readyState === 4) {

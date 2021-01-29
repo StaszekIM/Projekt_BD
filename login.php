@@ -21,12 +21,12 @@ if ($method == 'GET'){
     $row = $stmt -> fetch(PDO::FETCH_ASSOC);
 
     if ($success) {
-        if (password_verify($password, $row['password'])) {
+        if ($stmt -> rowCount() && password_verify($password, $row['password'])) {
             $_SESSION['id'] = $row['id'];
             echo 'Success';
         }else {
             http_response_code(401);
-            echo 'Wrong password';
+            echo 'Wrong credentials';
         }
     }else {
         echo 'Query failed';

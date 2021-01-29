@@ -10,8 +10,9 @@ if ($_SERVER['REQUEST_METHOD'] != 'POST'){
     return;
 }
 $dbconn = Connection::getPDO();
-$stmt = $dbconn -> prepare('select id from users.users where email = :email');
+$stmt = $dbconn -> prepare("select id from shop.users where email = :email");
 $success = $stmt -> execute([':email' => $_POST['email']]);
+
 if ($success) {
     $row = $stmt -> fetch();
     if (!isset($row['id'])){
