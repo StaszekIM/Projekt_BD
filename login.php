@@ -24,6 +24,7 @@ if ($method == 'GET'){
         if ($stmt -> rowCount() && password_verify($password, $row['password'])) {
             $_SESSION['id'] = $row['id'];
             echo 'Success';
+            header("Location: http://g22.labagh.pl/shop.php", true, 302);
         }else {
             http_response_code(401);
             echo 'Wrong credentials';
