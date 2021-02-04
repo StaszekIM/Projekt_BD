@@ -36,6 +36,7 @@
                                 echo '<li><a onclick="logout();"><p id="BLogout" '; if (!isset($_SESSION['id'])) echo 'hidden'; echo '>Logout</p></a></li>';
                                 
                                 try{
+                                    if (isset($_SESSION['id'])){
                                     $dbconn = Connection::getPDO();
                                     $sql = 'SELECT access_level FROM shop.users where id=:id;';                            
                                     $stmt = $dbconn -> prepare($sql);
@@ -44,6 +45,7 @@
                                     $access_level = intval($row['access_level']);
                                     if($access_level==1){
                                         echo '<li><a href="manage_s.php"><p id="Manage">Manage Shop</p></a></li>';
+                                    }
                                     }
                                 }catch (Exception $e){                                    
                                 }
