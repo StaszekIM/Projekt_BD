@@ -32,16 +32,21 @@
 				<div class="row">
 					<div class="col-md-4 clearfix">
 						<div class="logo pull-left">
-							<a href="index.html" style="color:green; font-size:1.5em;">BD G22</a>
+							<a href="shop.php" style="color:green; font-size:1.5em;">BD G22</a>
 						</div>
 					</div>
 					<div class="col-md-8 clearfix">
 						<div class="shop-menu clearfix pull-right">
 							<ul class="nav navbar-nav">
-								<li><a href=""><i class="fa fa-user"></i> Account</a></li>
-								<li><a href="checkout.html"><i class="fa fa-crosshairs"></i> Checkout</a></li>
-								<li><a href="cart.php"><i class="fa fa-shopping-cart"></i> Cart</a></li>
-								<li><a href="login.html"><i class="fa fa-lock"></i> Login</a></li>
+								<li><a href="cart.php">Cart</a></li>
+                                <?php
+                                //include "DBConnection.php";
+                                include "CategoriesProxy.php";
+                                include "helpers.php";
+                                session_start();
+                                echo '<li><a href="login.php"><p id="BLogin" '; if (isset($_SESSION['id'])) echo 'hidden'; echo '>Login</p></a></li>';
+                                echo '<li><a onclick="logout();"><p id="BLogout" '; if (!isset($_SESSION['id'])) echo 'hidden'; echo '>Logout</p></a></li>';
+                                ?>
 							</ul>
 						</div>
 					</div>
@@ -63,22 +68,14 @@
 						</div>
 						<div class="mainmenu pull-left">
 							<ul class="nav navbar-nav collapse navbar-collapse">
-								<li><a href="index.html">Home</a></li>
+								<li><a href="shop.php">Home</a></li>
 								<li class="dropdown"><a href="#" class="active">Shop<i class="fa fa-angle-down"></i></a>
                                     <ul role="menu" class="sub-menu">
-                                        <li><a href="shop.html" class="active">Products</a></li>
-										<li><a href="product-details.html">Product Details</a></li> 
-										<li><a href="checkout.html">Checkout</a></li> 
+                                        <li><a href="shop.php" class="active">Products</a></li>
 										<li><a href="cart.php">Cart</a></li>
-										<li><a href="login.html">Login</a></li> 
                                     </ul>
                                 </li>
 							</ul>
-						</div>
-					</div>
-					<div class="col-sm-3">
-						<div class="search_box pull-right">
-							<input type="text" placeholder="Search"/>
 						</div>
 					</div>
 				</div>
@@ -101,9 +98,9 @@
 						<div class="panel-group category-products" id="accordian"><!--category-productsr-->
 							<?php
 								//include "DBConnection.php";
-								include "CategoriesProxy.php";
-								include "helpers.php";
-                                session_start();
+								//include "CategoriesProxy.php";
+								//include "helpers.php";
+                                //session_start();
 
 								try {
                                     $dbconn = Connection::getPDO();
@@ -210,15 +207,15 @@
 								</ul>
 							</div>
 						</div><!--/brands_products-->
-						
-						<div class="price-range"><!--price-range-->
+						<!--
+						<div class="price-range">
 							<h2>Price Range</h2>
 							<div class="well">
 								 <input type="text" class="span2" value="" data-slider-min="0" data-slider-max="600" data-slider-step="5" data-slider-value="[250,450]" id="sl2" ><br />
 								 <b>$ 0</b> <b class="pull-right">$ 600</b>
 							</div>
-						</div><!--/price-range-->
-						
+						</div>
+                        -->
 					</div>
 				</div>
 				
@@ -302,20 +299,6 @@
 						    </div>';
                         }
                         ?>
-
-						<div class="col-sm-4">
-							<div class="product-image-wrapper">
-								<div class="single-products">
-									<div class="productinfo text-center">
-										<img src="images/home/product3.jpg" alt="" />
-										<h2>$56</h2>
-										<p>HTML placeholder</p>
-										<a href="#" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
-									</div>
-								</div>
-							</div>
-						</div>
-
 						
 						<ul class="pagination">
                             <?php
@@ -346,5 +329,6 @@
     <script src="js/jquery.prettyPhoto.js"></script>
     <script src="js/main.js"></script>
     <script src="js/cart.js"></script>
+    <script src="js/logout.js"></script>
 </body>
 </html>

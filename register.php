@@ -22,8 +22,11 @@ elseif ($method == 'POST') {
     $check_surname = filter_var($_POST['surname'], FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
     $check_email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
 
-    if ($check_email != $_POST['email'] || $check_name != $_POST['name'] || $check_surname != $_POST['surname'])
+    if ($check_email != $_POST['email'] || $check_name != $_POST['name'] || $check_surname != $_POST['surname']) {
         readfile('register_error.html');
+        http_response_code(403);
+        exit();
+    }
 
     //Get phone number in form of only digits
     $phone = '';

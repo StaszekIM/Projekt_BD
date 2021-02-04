@@ -5,7 +5,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST"){
     session_start();
     if (!isset($_SESSION['id'])) {
         echo '<a href="/login.php">Login first</a>';
-        http_send_status(401);
+        http_response_code(401);
+        exit();
     }
     $dbconn = Connection::getPDO();
     $dbconn->beginTransaction();
@@ -52,4 +53,5 @@ if ($_SERVER['REQUEST_METHOD'] == "POST"){
         $dbconn -> rollBack();
         http_send_status(500);
     }
+    readfile('show_oreder.php');
 }

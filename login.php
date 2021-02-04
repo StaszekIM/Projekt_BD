@@ -27,7 +27,8 @@ if ($method == 'GET'){
             header("Location: http://g22.labagh.pl/shop.php", true, 302);
         }else {
             http_response_code(401);
-            echo 'Wrong credentials';
+            readfile('./login.html');
+            echo '<script>document.getElementById("banner").innerHTML = "Wrong credentials, try again";</script>';
         }
     }else {
         echo 'Query failed';

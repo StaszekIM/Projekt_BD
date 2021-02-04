@@ -32,9 +32,13 @@
 					<div class="col-md-8 clearfix">
 						<div class="shop-menu clearfix pull-right">
 							<ul class="nav navbar-nav">
-								<li><a href=""><i class="fa fa-user"></i> Account</a></li>
-								<li><a href="cart.php"><i class="fa fa-shopping-cart"></i> Cart</a></li>
-								<li><a href="login.html"><i class="fa fa-lock"></i> Login</a></li>
+                                <li><a href="cart.php">Cart</a></li>
+                                <?php
+                                include "DBConnection.php";
+                                session_start();
+                                echo '<li><a href="login.php"><p id="BLogin" '; if (isset($_SESSION['id'])) echo 'hidden'; echo '>Login</p></a></li>';
+                                echo '<li><a onclick="logout();"><p id="BLogout" '; if (!isset($_SESSION['id'])) echo 'hidden'; echo '>Logout</p></a></li>';
+                                ?>
 							</ul>
 						</div>
 					</div>
@@ -56,14 +60,11 @@
 						</div>
 						<div class="mainmenu pull-left">
 							<ul class="nav navbar-nav collapse navbar-collapse">
-								<li><a href="index.html">Home</a></li>
+								<li><a href="shop.php">Home</a></li>
 								<li class="dropdown"><a href="#">Shop<i class="fa fa-angle-down"></i></a>
                                     <ul role="menu" class="sub-menu">
-                                        <li><a href="shop.html">Products</a></li>
-										<li><a href="product-details.html">Product Details</a></li> 
-										<li><a href="checkout.html">Checkout</a></li> 
+                                        <li><a href="shop.php">Products</a></li>
 										<li><a href="cart.php" class="active">Cart</a></li>
-										<li><a href="login.html">Login</a></li> 
                                     </ul>
                                 </li>
 							</ul>
@@ -97,9 +98,7 @@
 					</thead>
 					<tbody id="item_table">
                     <?php
-                    include "DBConnection.php";
                     $dbconn = Connection::getPDO();
-                    session_start();
                     foreach ($_SESSION['cart'] as $item) {
                         $stmt = $dbconn -> prepare('select "name", price from shop.products where id = :id');
                         $stmt -> execute(['id' => $item]);
@@ -139,16 +138,19 @@
                 <div class="heading">
                     <h3>Summary</h3>
                 </div>
+                <input type="submit" class="btn btn-default check_out" value="Buy">
+                <!--
                 <div class="row">
                     <div class="col-sm-6">
                         <div class="total_area">
                             <ul>
                                 <li>Total <span>$61</span></li>
                             </ul>
-                            <input type="submit" class="btn btn-default check_out" value="Buy">
+                            Input should be moved here
                         </div>
                     </div>
                 </div>
+                -->
             </div>
             </form>
 		</div>
