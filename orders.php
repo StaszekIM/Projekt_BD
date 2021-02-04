@@ -12,34 +12,36 @@ if ($_SERVER['REQUEST_METHOD'] == "POST"){
     $dbconn->beginTransaction();
     try {
         unset($_SESSION['cart']);
-        $total = 0;
-        $stmt = $dbconn->prepare('select id, available, price from products where id = :id for update');
-        // Check availability + calculate total
-        foreach (array_keys($_POST) as $id) {
-            $stmt -> execute([':id' => $id]);
-            $res = $stmt -> fetch();
-            if ($res['available'] < $_POST[$id]) throw new RuntimeException();
-            $total += intval($_POST[$id]) * intval($res['price']);
+        if (count(array_keys($_POST)) > 0) {
+            $total = 0;
+            $stmt = $dbconn->prepare('select id, available, price from products where id = :id for update');
+            // Check availability + calculate total
+            foreach (array_keys($_POST) as $id) {
+                $stmt->execute([':id' => $id]);
+                $res = $stmt->fetch();
+                if ($res['available'] < $_POST[$id]) throw new RuntimeException();
+                $total += intval($_POST[$id]) * intval($res['price']);
+            }
+            // Update availability
+            $stmt = $dbconn->prepare('update shop.products set available = ((select available from shop.products where id = :id)-' . $_POST[$id] . ') where id = :id');
+            foreach (array_keys($_POST) as $id) {
+                $success = $stmt->execute([':id' => $id]);
+                if (!$success) throw new RuntimeException();
+            }
+            // Create new order entry
+            $stmt = $dbconn->prepare('insert into shop.orders (client, total, "date") values (:uid, :total, current_date) returning id');
+            $success = $stmt->execute([':uid' => $_SESSION['id'], ':total' => $total]);
+            $oid = $stmt->fetch()['id'];
+            // All order parts inserted
+            $stmt = $dbconn->prepare('insert into shop.parts (pid, oid, price, amount) values (:pid, :oid, :price, :amount)');
+            $price = $dbconn->prepare('select price from shop.products where id = :id');
+            foreach (array_keys($_POST) as $id) {
+                $price->execute([':id' => $id]);
+                $p = $price->fetch()['price'];
+                $stmt->execute([':pid' => $id, ':oid' => $oid, ':price' => $p, ':amount' => intval($_POST[$id])]);
+            }
+            $dbconn->commit();
         }
-        // Update availability
-        $stmt = $dbconn -> prepare('update shop.products set available = ((select available from shop.products where id = :id)-'.$_POST[$id].') where id = :id');
-        foreach (array_keys($_POST) as $id) {
-            $success = $stmt -> execute([':id' => $id]);
-            if (!$success) throw new RuntimeException();
-        }
-        // Create new order entry
-        $stmt = $dbconn -> prepare('insert into shop.orders (client, total, "date") values (:uid, :total, current_date) returning id');
-        $success = $stmt -> execute([':uid' => $_SESSION['id'], ':total' => $total]);
-        $oid = $stmt -> fetch()['id'];
-        // All order parts inserted
-        $stmt = $dbconn -> prepare('insert into shop.parts (pid, oid, price, amount) values (:pid, :oid, :price, :amount)');
-        $price = $dbconn -> prepare('select price from shop.products where id = :id');
-        foreach (array_keys($_POST) as $id) {
-            $price -> execute([':id' => $id]);
-            $p = $price -> fetch()['price'];
-            $stmt -> execute([':pid' => $id, ':oid' => $oid, ':price' => $p, ':amount' => intval($_POST[$id])]);
-        }
-        $dbconn->commit();
         //http_send_status(200);
     }catch (Exception $e){
         echo 'Fail';

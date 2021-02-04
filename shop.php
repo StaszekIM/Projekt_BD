@@ -230,6 +230,7 @@
                             }
                         }
 
+                        $cnt = 0;
                         if (isset($_GET['cat'])) {
 
                             $tmp_cids = $proxy -> get_subcategories(intval($_GET['cat']));
@@ -250,11 +251,19 @@
                                 $stmt -> execute(['bid' => intval($_GET['brd'])]);
                                 $data = $stmt -> fetchAll();
 
+                                $stmt = $dbconn -> prepare('select count(id) as cnt from shop.products where bid = :bid and cid in (' . implode(',', $cids) . ')');
+                                $stmt -> execute(['bid' => intval($_GET['brd'])]);
+                                $cnt = $stmt -> fetch()['cnt'];
+
                             }else {
                                 // Categories filter
                                 $stmt = $dbconn -> prepare('select * from shop.products where cid in (' . implode(',', $cids) . ') order by id asc limit 9 offset ' . $offset); // Input is safe based on how $cids variable is created
                                 $stmt -> execute(); // Using parameter substitution here causes errors
                                 $data = $stmt -> fetchAll();
+
+                                $stmt = $dbconn -> prepare('select count(id) as cnt from shop.products where cid in (' . implode(',', $cids) . ')');
+                                $stmt -> execute();
+                                $cnt = $stmt -> fetch()['cnt'];
 
                             }
 
@@ -264,14 +273,24 @@
                             $stmt -> execute(['bid' => intval($_GET['brd'])]);
                             $data = $stmt -> fetchAll();
 
+                            $stmt = $dbconn -> prepare('select count(id) as cnt from shop.products where bid = :bid');
+                            $stmt -> execute(['bid' => intval($_GET['brd'])]);
+                            $cnt = $stmt -> fetch()['cnt'];
+
                         }else {
                             // No filters
                             $stmt = $dbconn -> prepare('select * from shop.products order by id asc limit 9 offset ' . $offset);
                             $stmt -> execute();
                             $data = $stmt -> fetchAll();
 
+                            $stmt = $dbconn -> prepare('select count(id) as cnt from shop.products');
+                            $stmt -> execute();
+                            $cnt = $stmt -> fetch()['cnt'];
+
                         }
+                        //$cnt_show = 0;
                         foreach ($data as $product) {
+                            //++$cnt_show;
                             echo '
                             <div class="col-sm-4">
 						    	<div class="product-image-wrapper">
@@ -292,9 +311,9 @@
 						
 						<ul class="pagination">
                             <?php
-                            $stmt = $dbconn -> prepare("select count(id) as cnt from shop.products");
-                            $stmt -> execute();
-                            $cnt = intval($stmt->fetch()['cnt']);
+                            //$stmt = $dbconn -> prepare("select count(id) as cnt from shop.products");
+                            //$stmt -> execute();
+                            //$cnt = intval($stmt->fetch()['cnt']);
                             if ($cnt <= 9 * $page) $max = $page;
                             else $max = $page + 1;
                             if ($page > 1) $i = $page - 1;
