@@ -7,8 +7,6 @@
     <meta name="author" content="">
     <title>BD G22</title>
     <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/font-awesome.min.css" rel="stylesheet">
-    <link href="css/prettyPhoto.css" rel="stylesheet">
     <link href="css/price-range.css" rel="stylesheet">
     <link href="css/animate.css" rel="stylesheet">
 	<link href="css/main.css" rel="stylesheet">
@@ -29,7 +27,6 @@
 					<div class="col-md-8 clearfix">
 						<div class="shop-menu clearfix pull-right">
 							<ul class="nav navbar-nav">
-								<li><a href="cart.php">Cart</a></li>
                                 <?php
                                 //include "DBConnection.php";
                                 include "CategoriesProxy.php";
@@ -38,6 +35,8 @@
                                 echo '<li><a href="login.php"><p id="BLogin" '; if (isset($_SESSION['id'])) echo 'hidden'; echo '>Login</p></a></li>';
                                 echo '<li><a onclick="logout();"><p id="BLogout" '; if (!isset($_SESSION['id'])) echo 'hidden'; echo '>Logout</p></a></li>';
                                 ?>
+                                <li><a href="cart.php">Cart</a></li>
+                                <li><a href="orders.php">Orders</a></li>
 							</ul>
 						</div>
 					</div>

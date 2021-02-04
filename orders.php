@@ -1,13 +1,13 @@
 <?php
 include "DBConnection.php";
 session_start();
-
+if (!isset($_SESSION['id'])) {
+    echo '<a href="/login.php">Login first</a>';
+    header('Location: https://g22.labagh.pl/login.php?redirect=orders', true, 302);
+    exit();
+}
 if ($_SERVER['REQUEST_METHOD'] == "POST"){
-    if (!isset($_SESSION['id'])) {
-        echo '<a href="/login.php">Login first</a>';
-        http_response_code(401);
-        exit();
-    }
+
     $dbconn = Connection::getPDO();
     $dbconn->beginTransaction();
     try {
@@ -55,8 +55,30 @@ echo '<!DOCTYPE html>
        <meta name="viewport" content="width=device-width, initial-scale=1.0">
        <title>BD G22</title>
        <link href="css/bootstrap.min.css" rel="stylesheet">
+       <link href="css/main.css" rel="stylesheet">
+       <link href="css/animate.css" rel="stylesheet">
+	   <link href="css/responsive.css" rel="stylesheet">
    </head>
-   <body>';
+   <body>
+   <header id="header">
+		<div class="header-middle">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-8 clearfix">
+						<div class="shop-menu clearfix pull-right">
+							<ul class="nav navbar-nav">
+                                <li><a href="cart.php">Cart</a></li>
+                                <li><a href="shop.php">Shop</a></li>';
+                                echo '<li><a href="login.php"><p id="BLogin" '; if (isset($_SESSION['id'])) echo 'hidden'; echo '>Login</p></a></li>';
+                                echo '<li><a onclick="logout();"><p id="BLogout" '; if (!isset($_SESSION['id'])) echo 'hidden'; echo '>Logout</p></a></li>';
+                        echo '</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+    </header>
+       <div class="container">';
 $dbconn = Connection::getPDO();
 $stmt = $dbconn -> prepare('select id from orders where client = :id');
 $success = $stmt -> execute([':id' => $_SESSION['id']]);
@@ -91,8 +113,12 @@ if ($success) {
         }
         echo '</tbody>
 			</table>
-			</div>
-		</body>';
+			</div>';
     }
 }
+echo '<script src="/js/jquery.js"></script>
+	        <script src="/js/bootstrap.min.js"></script>
+	        <script src="/js/main.js"></script>
+		</div>
+		</body>';
 http_response_code(200);
