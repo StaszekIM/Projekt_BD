@@ -36,6 +36,7 @@
                                 echo '<li><a onclick="logout();"><p id="BLogout" '; if (!isset($_SESSION['id'])) echo 'hidden'; echo '>Logout</p></a></li>';
                                 
                                 try{
+                                    $dbconn = Connection::getPDO();
                                     $sql = 'SELECT access_level FROM shop.users where id=:id;';                            
                                     $stmt = $dbconn -> prepare($sql);
                                     $stmt -> execute(array(':id' => $_SESSION['id']));
