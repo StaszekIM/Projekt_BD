@@ -11,6 +11,9 @@
     <link href="css/animate.css" rel="stylesheet">
 	<link href="css/main.css" rel="stylesheet">
 	<link href="css/responsive.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/prettyPhoto.css" rel="stylesheet">
+    <link href="css/price-range.css" rel="stylesheet">
 </head><!--/head-->
 
 <body>
@@ -76,7 +79,7 @@
 						<div class="mainmenu pull-left">
 							<ul class="nav navbar-nav collapse navbar-collapse">
 								<li><a href="shop.php">Home</a></li>
-								<li class="dropdown"><a href="#" class="active">Shop<i class="fa fa-angle-down"></i></a>
+								<li class="dropdown"><a href="#" class="active">Shop</a>
                                     <ul role="menu" class="sub-menu">
                                         <li><a href="shop.php" class="active">Products</a></li>
 										<li><a href="cart.php">Cart</a></li>
