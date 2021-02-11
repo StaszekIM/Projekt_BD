@@ -86,12 +86,21 @@
 					</thead>
 					<tbody id="item_table">
                     <?php
-                    $dbconn = Connection::getPDO();
+                    
+					$dbconn = Connection::getPDO();
                     foreach ($_SESSION['cart'] as $item) {
-                        $stmt = $dbconn -> prepare('select "name", price from shop.products where id = :id');
+                        $stmt = $dbconn -> prepare('select "name", price, newprice from shop.products LEFT JOIN (SELECT pid, newprice FROM shop.sales) AS sales ON products.id = sales.pid where id = :id');
                         $stmt -> execute(['id' => $item]);
                         $res = $stmt -> fetch();
                         $name = $res['name'];
+						if(!empty($res['newprice'])) {
+							$price = $res['newprice'];
+							$oldprice = $res['price'];
+						}
+						else {
+							$price = $res['price'];
+							$oldprice = '';
+						}
                         echo '<tr>
 							<td class="cart_product"> <a>-</a>
 								' . //<a href=""><img src="images/" alt=""></a>
@@ -101,12 +110,12 @@
 								<h4><a href="/details?prod=' . intval($item) . '">' . $name . '</a></h4>
 							</td>
 							<td class="cart_price">
-								<h4><a>' . $res['price'] . '</a></h4>
+								<h4><a>' . $price . '</a>  <del>' . $oldprice . '</del></h4>
 							</td>
 							<td class="cart_quantity">
 								<div class="cart_quantity_button">
 									<!-- <a class="cart_quantity_up" href=""> + </a> -->
-									<input class="cart_quantity_input" type="number" name="' . $item . '" value="2" autocomplete="off" size="2" onchange="calculate_total();">
+									<input class="cart_quantity_input" type="number" name="' . $item . '" value="1" autocomplete="off" size="2" onchange="calculate_total();">
 									<!-- <a class="cart_quantity_down" href=""> - </a> -->
 								</div>
 							</td>

@@ -22,6 +22,7 @@
     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/ico/apple-touch-icon-114-precomposed.png">
     <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/ico/apple-touch-icon-72-precomposed.png">
     <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57-precomposed.png">
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>        
 </head><!--/head-->
 <body>
 
@@ -416,19 +417,21 @@
       							<th scope="col">Available</th>  
       							<th scope="col">Price</th>  
       							<th scope="col">Description</th>  
+								<th scope="col">Discounted to</th>
     						</tr>
   						</thead>
   						<tbody>
   						
   						<?php 
   						try{
-  						$sql = 'SELECT * FROM shop.products ORDER BY id;';
+  						$sql = 'SELECT * FROM shop.products LEFT JOIN (SELECT pid, newprice FROM shop.sales) AS sales ON products.id = sales.pid ORDER BY id;';
   						$dbconn->beginTransaction();
   						$stmt = $dbconn -> prepare($sql);
   						$stmt -> execute();
   						$dbconn->commit();
   						
   						while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+							
   						    echo '<tr>
                                   <th scope="col">' . $row['id'] . '</th>
                                   <th scope="col">' . $row['name'] . '</th>
@@ -437,6 +440,9 @@
                                   <th scope="col">' . $row['available'] . '</th>
                                   <th scope="col">' . $row['price'] . '</th>
                                   <th scope="col">' . $row['description'] . '</th>
+								  <th scope="col">' . $row['newprice'];
+								  if(!empty($row['newprice'])) echo ', -' . floor(100 - 100*$row['newprice']/$row['price']) . '%';
+							echo '</th>
                                   </tr>';
   						}
   						
@@ -653,6 +659,144 @@
 								</select>
 							</div>
 							<button type="submit" name="delete_product" >Delete product</button>
+		
+						</form> 
+                	</div>
+                	</div>
+                </div>
+				<div class="card" style="border: 1px solid; padding: 8px; border-radius: 8px; margin: 4px" >              
+                	<h4 class="card-header" role="tab" id="headingFourProducts" >
+            				<a data-toggle="collapse" data-parent="#accordionProducts" href="#collapseFourProducts" aria-expanded="true" aria-controls="collapseFourProducts" class="d-block">
+               				 	<i class="fa fa-chevron-down pull-right"></i> Discount product
+            				</a>
+        				</h4>
+        			<div id="collapseFourProducts" class="collapse" role="tabpanel" aria-labelledby="headingFourProducts">
+                	<div class="card-body">
+                		<form action="" method='post'>
+                			<div class="form-group">
+    							<label for="discount_product_id">Discount product - ID:</label><br>
+    							<select id="discount_product_id" class="form-control" name="discount_product_id">
+									<?php 
+									try{
+									    $sql = 'SELECT id, price FROM shop.products ORDER BY id;';
+									    $dbconn->beginTransaction();
+									    $stmt = $dbconn -> prepare($sql);
+									    $stmt -> execute();
+									    $dbconn->commit();
+										$data = $stmt->fetchAll();
+									    
+									    foreach($data as $row) {
+									        echo '<option value="' . $row['id'] . '">' . $row['id'] .'</option> ';
+									    }
+									    
+									}catch(Exception $e){
+									    echo 'error';
+									}
+									?>
+								</select>
+								<h5 id="sos"></h5>
+								<div class="form-group">	
+									<label for="discount_product_newprice">Product price after discount:</label><br>
+									<input class="form-control" type="number" step=0.01 min="0" id="discount_product_newprice" name="discount_product_newprice" value="0.00"><br>
+								</div>
+								<h6 id="nohigher">The discounted price cannot be higher than the original.</h6>
+								<div class="form-group">	
+									<label for="discount_product_percent">Product discount in percent:</label><br>
+									<input class="form-control" type="number" step=1 min="0" max="100" id="discount_product_percent" name="discount_product_percent" value="0" ><br>
+								</div>
+								<h6 id="percenterror">This value must be between 0 and 100.</h6>
+								<div class="form-group">
+									<label for="discount_product_date">Time of end of discount:</label><br>
+									<input class="form-control" type="date" id="discount_product_date" name="discount_product_date" value="<?php echo date('Y-m-d'); ?>">
+									<input class="form-control" type="time" id="discount_product_time" name="discount_product_time" value="12:00"><br>
+								</div>
+								<script>
+									$("#nohigher").hide();
+									$("#percenterror").hide();
+									var data = <?php echo json_encode($data); ?>;
+									console.log(data);
+									var pricey = parseInt(data[0].price);
+									document.getElementById("sos").innerHTML = "Current product price is " + pricey;
+									
+									$('#discount_product_id').change(function() {
+										var value = this.value;
+										jQuery.each(data, function() {
+											if (this.id == value) {
+												pricey = this.price;
+												document.getElementById("sos").innerHTML = "Current product price is " + pricey;
+												document.getElementById("discount_product_newprice").value = 0;
+												document.getElementById("discount_product_percent").value = 0;
+											}
+										});
+									});
+									
+									$('#discount_product_newprice').change(function() {
+										var value = parseInt(this.value);
+										if ( value > pricey ) {
+											this.value = 0;
+											$("#nohigher").show();
+											document.getElementById("discount_product_percent").value = 0;
+										}
+										else {
+											document.getElementById("discount_product_percent").value = Math.floor(100 - 100*value/pricey);
+											$("#nohigher").hide();
+										}
+									});
+									
+									$('#discount_product_percent').change(function() {
+										var value = parseInt(this.value);
+										if ( value >= 0 && value <= 100) {
+											document.getElementById("discount_product_newprice").value = Math.round(pricey*(100-value))/100;
+											$("#percenterror").hide();
+										}
+										else {
+											this.value = 0;
+											document.getElementById("discount_product_newprice").value = 0;
+											$("#percenterror").show();
+										}
+									});
+								</script>
+									
+								
+								
+							</div>
+							<button type="submit" name="discount_product" >Discount product</button>
+		
+						</form> 
+                	</div>
+                	</div>
+                </div>
+				<div class="card" style="border: 1px solid; padding: 8px; border-radius: 8px; margin: 4px" >              
+                	<h4 class="card-header" role="tab" id="headingFiveProducts" >
+            				<a data-toggle="collapse" data-parent="#accordionProducts" href="#collapseFiveProducts" aria-expanded="true" aria-controls="collapseFiveProducts" class="d-block">
+               				 	<i class="fa fa-chevron-down pull-right"></i> Remove discount
+            				</a>
+        				</h4>
+        			<div id="collapseFiveProducts" class="collapse" role="tabpanel" aria-labelledby="headingFiveProducts">
+                	<div class="card-body">
+                		<form action="" method='post'>
+                			<div class="form-group">
+    							<label for="remove_discount_id">Remove discount from product - id:</label><br>
+    							<select id="remove_discount_id" class="form-control"name="remove_discount_id">
+									<?php 
+									try{
+									    $sql = 'SELECT id FROM shop.products JOIN (SELECT pid, newprice FROM shop.sales) AS sales ON products.id = sales.pid ORDER BY id;';
+									    $dbconn->beginTransaction();
+									    $stmt = $dbconn -> prepare($sql);
+									    $stmt -> execute();
+									    $dbconn->commit();
+									    
+									    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+									        echo '<option value="' . $row['id'] . '">' . $row['id'] .'</option> ';
+									    }
+									    
+									}catch(Exception $e){
+									    echo 'error';
+									}
+									?>
+								</select>
+							</div>
+							<button type="submit" name="remove_discount" >Remove discount</button>
 		
 						</form> 
                 	</div>

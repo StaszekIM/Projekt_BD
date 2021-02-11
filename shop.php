@@ -267,7 +267,7 @@
 
                             if (isset($_GET['brd'])) {
                                 // Categories and brands filter
-                                $stmt = $dbconn -> prepare('select * from shop.products where bid = :bid and cid in (' . implode(',', $cids) . ') order by id asc limit 9 offset ' . $offset);
+                                $stmt = $dbconn -> prepare('select * from shop.products LEFT JOIN (SELECT pid, newprice, duntil FROM shop.sales) AS sales ON products.id = sales.pid where bid = :bid and cid in (' . implode(',', $cids) . ') order by id asc limit 9 offset ' . $offset);
                                 $stmt -> execute(['bid' => intval($_GET['brd'])]);
                                 $data = $stmt -> fetchAll();
 
@@ -277,7 +277,7 @@
 
                             }else {
                                 // Categories filter
-                                $stmt = $dbconn -> prepare('select * from shop.products where cid in (' . implode(',', $cids) . ') order by id asc limit 9 offset ' . $offset); // Input is safe based on how $cids variable is created
+                                $stmt = $dbconn -> prepare('select * from shop.products LEFT JOIN (SELECT pid, newprice, duntil FROM shop.sales) AS sales ON products.id = sales.pid where cid in (' . implode(',', $cids) . ') order by id asc limit 9 offset ' . $offset); // Input is safe based on how $cids variable is created
                                 $stmt -> execute(); // Using parameter substitution here causes errors
                                 $data = $stmt -> fetchAll();
 
@@ -289,7 +289,7 @@
 
                         }elseif (isset($_GET['brd'])) {
                             // Brands filter
-                            $stmt = $dbconn -> prepare('select * from shop.products where bid = :bid order by id asc limit 9 offset ' . $offset);
+                            $stmt = $dbconn -> prepare('select * from shop.products LEFT JOIN (SELECT pid, newprice, duntil FROM shop.sales) AS sales ON products.id = sales.pid where bid = :bid order by id asc limit 9 offset ' . $offset);
                             $stmt -> execute(['bid' => intval($_GET['brd'])]);
                             $data = $stmt -> fetchAll();
 
@@ -299,7 +299,7 @@
 
                         }else {
                             // No filters
-                            $stmt = $dbconn -> prepare('select * from shop.products order by id asc limit 9 offset ' . $offset);
+                            $stmt = $dbconn -> prepare('select * from shop.products LEFT JOIN (SELECT pid, newprice, duntil FROM shop.sales) AS sales ON products.id = sales.pid order by id asc limit 9 offset ' . $offset);
                             $stmt -> execute();
                             $data = $stmt -> fetchAll();
 
@@ -316,9 +316,33 @@
 						    	<div class="product-image-wrapper">
 						    		<div class="single-products">
 						    			<div class="productinfo text-center">
-						    				<img src="images/shop/product8.jpg" alt="" />
-						    				<h2 class="price">' . $product['price'] . '</h2>
-						    				<p>' . $product['name'] . '</p> 
+						    				<img src="images/shop/product8.jpg" alt="" />';
+						    if(empty($product['newprice']))	echo '<h2 class="price">' . $product['price'] . '</h2><h4> </h4>';
+							else {
+								echo '<h2 class="price" style="color: #DDDDDD;"><del>' .  $product['price'] . '</del>  <ins style="color: red">' . $product['newprice'] . '</ins></h2> 
+								<h4 style="color: red">-' . floor(100 - 100*$product['newprice']/$product['price']) . '%!</h4>	
+								<h6 id="'. $product['id'] .'Countdown" style="color:red"></h6>
+								<script>
+								var _' . $product['id'] . 'EndDate = new Date("' . $product['duntil'] . '").getTime();
+								
+								var _' . $product['id'] . 'x = setInterval(function() {
+									var _' . $product['id'] . 'now = new Date().getTime();
+									var _' . $product['id'] . 'distance = _' . $product['id'] . 'EndDate - _' . $product['id'] . 'now;
+									
+									var _' . $product['id'] . 'days = Math.floor(_' . $product['id'] . 'distance / (1000 * 60 * 60 * 24));
+									var _' . $product['id'] . 'hours = Math.floor((_' . $product['id'] . 'distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+									var _' . $product['id'] . 'minutes = Math.floor((_' . $product['id'] . 'distance % (1000 * 60 * 60)) / (1000 * 60));
+									var _' . $product['id'] . 'seconds = Math.floor((_' . $product['id'] . 'distance % (1000 * 60)) / 1000);
+									
+									document.getElementById("' . $product['id']  . 'Countdown").innerHTML = "ONLY FOR: " + _' . $product['id'] . 'days + "d " + _' . $product['id'] . 'hours + "h " + _' . $product['id'] . 'minutes + "m " + _' . $product['id'] . 'seconds + "s ";
+									if (_' . $product['id'] . 'distance < 0) {
+										clearInterval(_' . $product['id'] . 'x);
+										document.getElementById("' . $product['id']  . 'Countdown").innerHTML = "Sale is over!";
+									}
+								}, 1000);
+								</script>';
+							}
+						    echo			'<p>' . $product['name'] . '</p> 
 						    				<p hidden class="id">' . $product['id'] . '</p>
 						    				<a onclick="add_to_cart(this);" class="btn btn-default add-to-cart"><i class="fa fa-shopping-cart"></i>Add to cart</a>
 						    			</div>

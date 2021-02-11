@@ -249,7 +249,80 @@ if (!isset($_SESSION['id'])) {
                     }
                 }
                 
-                
+				//ADD DISCOUNT
+				
+				 if( isset($_POST['discount_product']) &&
+					isset($_POST['discount_product_id']) &&
+					isset($_POST['discount_product_newprice']) &&
+					isset($_POST['discount_product_percent']) && intval($_POST['discount_product_percent']) >= 0 &&
+					intval($_POST['discount_product_percent']) <= 100 &&
+					isset($_POST['discount_product_date']) &&
+					isset($_POST['discount_product_time'])) {
+					
+					try{
+                        $dbconn->beginTransaction();
+                        
+                        
+                        //checking if product exists
+                        $sql = 'SELECT id FROM shop.products WHERE id=:product_id';
+                        $stmt = $dbconn -> prepare($sql);
+                        $stmt -> execute(array(':product_id' => $_POST['discount_product_id']));
+                        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                        $product_id = intval($row['id']);
+                        
+                        if (empty($product_id)){
+                            throw new Exception('empty_p');
+                        }
+                        
+                        
+                        //sending query
+						$discountdate = json_encode($_POST['discount_product_date']);
+						$discounttime = json_encode($_POST['discount_product_time']);
+						$duntil = $discountdate . ' ' . $discounttime;
+                        $sql = 'INSERT INTO shop.sales (pid,newprice,duntil)
+                        VALUES (:pid, :newprice, :duntil);';
+                        $stmt = $dbconn -> prepare($sql);
+                        $stmt -> execute(array(':pid' => $product_id,
+                                ':newprice' => doubleval($_POST['discount_product_newprice']),
+								':duntil' => $duntil));
+                        $dbconn->commit();
+                            
+                        
+                        echo
+                        '<script type="text/javascript">',
+                        'alert("Discount Added");',
+                        '</script>'
+                            ;
+                        
+                    }catch (PDOException $e){
+                        $err_code = $e->getCode();
+                        $dbconn->rollback();
+                        if ($err_code=='23505'){
+                            echo
+                            '<script type="text/javascript">',
+                            'alert("Product is already discounted");',
+                            '</script>'
+                                ;
+                        }else{
+                            echo
+                            '<script type="text/javascript">',
+                            'alert("PDO EXCEPTION : ' . $err_code . '");',
+                            '</script>'
+                                ;
+                        }
+                        
+                    }catch (Exception $e){
+                        $dbconn->rollback();
+                        $errorMsg = $e->getMessage();
+                        echo $errorMsg;
+                        echo
+                        '<script type="text/javascript">',
+                        'alert("' . $errorMsg . '");',
+                        '</script>'
+                            ;
+                    }
+					
+				} 
                 //---------------------------------------------------------DELETE
                 //------------------DELETE BRAND
                 
@@ -426,6 +499,56 @@ if (!isset($_SESSION['id'])) {
                     }
                 }
                 
+				//REMOVE DISCOUNT
+				
+				if( isset($_POST['remove_discount']) && isset($_POST['remove_discount_id']) ){
+                    try{
+                        
+                        $dbconn->beginTransaction();
+                        $sql = 'SELECT pid FROM shop.sales WHERE pid=:remove_discount_id;';
+                        $stmt = $dbconn -> prepare($sql);
+                        $stmt -> execute(array(':remove_discount_id' => $_POST['remove_discount_id']));
+                        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                        $product_id = intval($row['pid']);
+                        
+                        if (empty($product_id)){
+                            throw new Exception('empty_p');
+                        }
+                        
+                        $sql = 'DELETE FROM shop.sales WHERE pid=:remove_discount_id;';
+                        $stmt = $dbconn -> prepare($sql);
+                        
+                        $stmt -> execute(array(':remove_discount_id' => $product_id));
+                        $dbconn->commit();
+                        
+                        
+                        echo
+                        '<script type="text/javascript">',
+                        'alert("Discount removed");',
+                        '</script>'
+                            ;
+                        
+                        
+                    }catch (PDOException $e){
+                        $err_code = $e->getCode();
+                        $dbconn->rollback();
+                        echo
+                        '<script type="text/javascript">',
+                        'alert("PDO EXCEPTION : ' . $err_code . '");',
+                        '</script>'
+                            ;
+                    }catch (Exception $e){
+                        $dbconn->rollback();
+                        $errorMsg = $e->getMessage();
+                        echo $errorMsg;
+                        echo
+                        '<script type="text/javascript">',
+                        'alert("' . $errorMsg . '");',
+                        '</script>'
+                            ;
+                    }
+                }
+				
                 //---------------------------------------------------------edit
                 //------------------edit BRAND
                 
